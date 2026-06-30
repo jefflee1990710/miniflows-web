@@ -14,6 +14,6 @@ export function getGeminiModel(): ChatGoogleGenerativeAI {
 }
 
 export function getGeminiModelWithSearch() {
-  // ponytail: googleSearch is the Gemini 2.0 grounding tool name for AI Studio
-  return getGeminiModel().bind({ tools: [{ googleSearch: {} }] });
+  // ponytail: googleSearch is the Gemini 2.5 grounding tool name for AI Studio
+  return getGeminiModel().bindTools([{ googleSearch: {} }]);
 }

@@ -28,6 +28,11 @@ export async function GET(
           return;
         }
 
+        // Send keyword metadata for the UI heading
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: "meta", keyword: doc.keyword })}\n\n`)
+        );
+
         if (doc.status === "done") {
           send({ type: "done", timeline: doc.timeline });
           controller.close();

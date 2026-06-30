@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { SearchProgress } from "@/components/search-progress";
 import { TimelineView } from "@/components/timeline-view";
 import type { TimelineEntry } from "@/lib/models/search";
@@ -10,6 +12,7 @@ type Phase = "planning" | "searching" | "extracting" | "done" | "error";
 export default function SearchPage() {
   const { id } = useParams<{ id: string }>();
   const [phase, setPhase] = useState<Phase>("planning");
+  const [keyword, setKeyword] = useState<string>("");
   const [angleStatuses, setAngleStatuses] = useState<{ angle: string; done: boolean }[]>([]);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +23,9 @@ export default function SearchPage() {
     es.onmessage = (e) => {
       const event = JSON.parse(e.data);
 
-      if (event.type === "planning") {
+      if (event.type === "meta") {
+        setKeyword(event.keyword ?? "");
+      } else if (event.type === "planning") {
         setPhase("planning");
       } else if (event.type === "angles") {
         setAngleStatuses(event.angles.map((a: string) => ({ angle: a, done: false })));
@@ -54,22 +59,47 @@ export default function SearchPage() {
   }, [id]);
 
   return (
-    <main className="min-h-screen p-8 max-w-3xl mx-auto space-y-8">
-      <a href="/" className="text-sm text-muted-foreground hover:underline">
-        ← New search
-      </a>
+    <main className="min-h-dvh p-6 md:p-10 max-w-5xl mx-auto space-y-8">
+      {/* Back link */}
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 cursor-pointer"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        New search
+      </Link>
 
+      {/* Keyword heading */}
+      {keyword && (
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            <span className="text-muted-foreground font-normal text-lg block mb-1">Timeline for</span>
+            {keyword}
+          </h1>
+        </div>
+      )}
+
+      {/* Error */}
       {phase === "error" && (
-        <div className="text-red-500">Error: {error}</div>
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          {error}
+        </div>
       )}
 
+      {/* Loading progress */}
       {(phase === "planning" || phase === "searching" || phase === "extracting") && (
-        <SearchProgress phase={phase} angles={angleStatuses} />
+        <div className="rounded-xl border border-white/8 bg-white/3 p-6">
+          <SearchProgress phase={phase} angles={angleStatuses} />
+        </div>
       )}
 
+      {/* Timeline */}
       {phase === "done" && (
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Timeline</h2>
+          <p className="text-sm text-muted-foreground">
+            {timeline.length} event{timeline.length !== 1 ? "s" : ""} found
+          </p>
           <TimelineView entries={timeline} />
         </div>
       )}

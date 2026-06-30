@@ -52,9 +52,17 @@ export async function runPipeline(
     onProgress({ type: "extracting" });
     const entries = await Promise.all(unique.map(extractDate));
 
-    // 5. Filter nulls, sort ascending
+    // 5. Filter nulls, dedup by year+title-prefix, sort ascending
+    const seenKeys = new Set<string>();
     const timeline = entries
-      .filter((e): e is TimelineEntry => e !== null)
+      .filter((e): e is TimelineEntry => {
+        if (e === null) return false;
+        const titleKey = e.title.toLowerCase().split(/\s+/).slice(0, 4).join(" ");
+        const key = `${e.date.getFullYear()}-${titleKey}`;
+        if (seenKeys.has(key)) return false;
+        seenKeys.add(key);
+        return true;
+      })
       .sort((a, b) => a.date.getTime() - b.date.getTime());
 
     // 6. Persist
